@@ -26,7 +26,6 @@ router.post('/login', async (req, res) => {
     }
 
     const validPassword = await userData.checkPassword(req.body.password);
-
     if (!validPassword) {
       res
         .status(400)
@@ -40,7 +39,7 @@ router.post('/login', async (req, res) => {
       req.session.logged_in = true;
       console.log("THIS WORKS!!!!")
       console.log(userData.name)
-
+      
       res.json({ user: userData.name, message: 'You are now logged in!' });
     });
 
@@ -48,7 +47,6 @@ router.post('/login', async (req, res) => {
     res.status(400).json(err);
   }
 });
-
 router.post('/logout', (req, res) => {
   if (req.session.logged_in) {
     req.session.destroy(() => {
@@ -58,5 +56,4 @@ router.post('/logout', (req, res) => {
     res.status(404).end();
   }
 });
-
 module.exports = router;

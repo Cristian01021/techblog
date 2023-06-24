@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const { Blogpost, User } = require("../models");
+const { Blogpost, User, Comment } = require("../models");
 const withAuth = require("../utils/auth");
 
 router.get("/", async (req, res) => {
@@ -40,6 +40,7 @@ router.get("/", async (req, res) => {
           },
         ],
       });
+
       const blogposts = blogpostData.map((blogpost) =>
         blogpost.get({ plain: true })
       );
@@ -48,7 +49,7 @@ router.get("/", async (req, res) => {
         logged_in: req.session.logged_in,
       });
     }
-
+ 
   } catch (err) {
     res.status(500).json(err);
   }
@@ -62,16 +63,24 @@ router.get("/blogpost/:id", withAuth, async (req, res) => {
           model: User,
           attributes: ["name"],
         },
+        {
+          model: Comment,
+          attributes: ["description", "date_created", "user_id","name"]
+        },
       ],
     });
 
-    const blogpost = blogpostData.get({ plain: true });
-    console.log(blogpost)
-    console.log(req.session)
+    const loggedUserData = await User.findByPk(req.session.user_id);
+    const loggedUser = loggedUserData.get({plain: true});
+    const blogpost = blogpostData.get({ plain: true }); 
+    console.log(blogpost.user_id) 
+    console.log(loggedUser.id)
+    let myblog = loggedUser.id == blogpost.user_id; 
 
     res.render("blogpost", {
       ...blogpost,
-      loggedUser: req.session.name,
+      loggedUser: loggedUser.name,
+      myBlog: myblog,
       logged_in: req.session.logged_in,
     });
   } catch (err) {
@@ -79,8 +88,10 @@ router.get("/blogpost/:id", withAuth, async (req, res) => {
   }
 });
 
+// Use withAuth middleware to prevent access to route
 router.get("/dashboard", withAuth, async (req, res) => {
   try {
+    // Find the logged in user based on the session ID
     const userData = await User.findByPk(req.session.user_id, {
       attributes: { exclude: ["password"] },
       include: [{ model: Blogpost }],
@@ -101,8 +112,6 @@ router.get("/login", (req, res) => {
     res.redirect("/dashboard");
     return;
   }
-
   res.render("login");
 });
-
 module.exports = router;
